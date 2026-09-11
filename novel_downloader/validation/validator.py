@@ -1,5 +1,5 @@
 """
-Multi-dimensional Quality Validator for Novel Downloader V2
+Multi-dimensional Quality Validator for Novel Downloader V2.1
 Combines identity matching, catalog health, 5-point content sampling, and completeness checks.
 """
 import re
@@ -54,7 +54,7 @@ class SourceValidator:
         if content_score < 12.0:
             is_qualified = False
             reasons.append("正文抽样均长过短或包含大面积截断广告/书库推广")
-        if catalog_score < 10.0:
+        if catalog_score < 8.0:
             is_qualified = False
             reasons.append("目录章节数过少、重复率过高或非正规章节标题")
         if total_score < 60.0:
@@ -115,7 +115,7 @@ class SourceValidator:
 
         valid_chap_titles = sum(1 for ch in probe.chapters if CHAPTER_REGEX.search(ch.title))
         format_ratio = valid_chap_titles / float(ch_count)
-        if format_ratio < 0.50 and ch_count > 10:
+        if format_ratio < 0.40 or (valid_chap_titles == 0 and ch_count >= 3):
             reasons.append(f"章节标题正规率极低 ({format_ratio*100:.1f}%)，判定为伪目录或推荐流")
             return 0.0
 
@@ -186,7 +186,6 @@ class SourceValidator:
         score = 0.0
         score += sample_success_rate * 12.0
 
-        # 正文饱满度评分 (最高 14 分)
         if avg_len >= 3000:
             score += 14.0
         elif avg_len >= 1800:

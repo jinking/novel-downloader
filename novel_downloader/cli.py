@@ -1,5 +1,5 @@
 """
-Novel Downloader V2 CLI Interface
+Novel Downloader V2.1 CLI Interface
 """
 import sys
 import json
@@ -9,14 +9,15 @@ from novel_downloader.models import DownloadStatus
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Novel Downloader V2 - 全网小说反爬逆向与智能质量校验下载引擎",
+        description="Novel Downloader V2.1 - 全网小说反爬逆向与智能质量校验下载引擎",
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("novel_name", nargs="?", default="", help="小说书名 (若未提供可配合 --url 使用)")
     parser.add_argument("--author", "-a", default=None, help="小说原作者 (可选，提供后大幅提高源站精准匹配)")
     parser.add_argument("--url", "-u", default=None, help="指定小说目录页或简介页 URL (直连模式，跳过全网搜索)")
     parser.add_argument("--output-dir", "-o", default="./downloads", help="保存 TXT 小说的目标目录 (默认: ./downloads)")
-    parser.add_argument("--concurrency", "-c", type=int, default=25, help="章节并发抓取线程数 (默认: 25)")
+    parser.add_argument("--concurrency", "-c", type=int, default=12, help="章节并发抓取线程数 (默认: 12)")
+    parser.add_argument("--allow-low-quality", action="store_true", help="没有达标来源时，允许显式选择最佳低质量候选继续下载 (仍不标记为 SUCCESS)")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出最终的诊断与执行报告")
 
     args = parser.parse_args()
@@ -32,7 +33,8 @@ def main():
         author=args.author,
         url=args.url,
         output_dir=args.output_dir,
-        concurrency=args.concurrency
+        concurrency=args.concurrency,
+        allow_low_quality=args.allow_low_quality
     )
 
     report = orchestrator.run()
@@ -47,9 +49,20 @@ def main():
             "candidates_parsed": report.candidates_parsed,
             "candidates_qualified": report.candidates_qualified,
             "selected_source": report.selected_source,
+            "selected_source_score": report.selected_source_score,
+            "selected_source_qualified": report.selected_source_qualified,
+            "quality_reasons": report.quality_reasons,
             "chapter_count": report.chapter_count,
             "failed_chapters": report.failed_chapters,
             "output_file": report.output_file,
+            "post_validation": {
+                "is_valid": report.post_validation.is_valid,
+                "total_chapters": report.post_validation.total_chapters,
+                "success_chapters": report.post_validation.success_chapters,
+                "failed_chapters": report.post_validation.failed_chapters,
+                "failed_ratio": report.post_validation.failed_ratio,
+                "reasons": report.post_validation.reasons
+            } if report.post_validation else None,
             "failures": [
                 {"stage": f.stage, "target": f.target, "reason": f.reason}
                 for f in report.failures
@@ -59,10 +72,8 @@ def main():
     else:
         print("\n" + report.summary())
 
-    if report.status in (DownloadStatus.SUCCESS, DownloadStatus.PARTIAL):
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    # 只有通过质量校验且下载产物达标的 SUCCESS 才返回 0
+    sys.exit(0 if report.status == DownloadStatus.SUCCESS else 1)
 
 if __name__ == "__main__":
     main()
