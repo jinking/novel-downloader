@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "novel-downloader"
+version = "1.0.0"
+description = "全自动小说嗅探、防验证码多级检索、逆向解密与全本纯净精校下载器"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "jinking" }
+]
+dependencies = [
+    "beautifulsoup4>=4.12.0",
+    "cryptography>=42.0.0",
+]
+
+[project.scripts]
+novel-dl = "novel_downloader.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["novel_downloader*"]

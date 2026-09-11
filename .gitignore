@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Novel downloads (keep directory structure)
+downloads/*.txt
+!downloads/.gitkeep
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# OS specific
+.DS_Store
+Thumbs.db
